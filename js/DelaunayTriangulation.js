@@ -39,9 +39,27 @@
         var _y = (y1 - y);
         var r = Math.sqrt((_x * _x) + (_y * _y));
 
-        // console.log(x, y, r);
-
         return new Circle(new Point(x, y), r);
+    }
+
+
+    /**
+     * Get a external triangle.
+     * @param {Rectangle} rect wrapped points rectangle.
+     * @return {Triangle}
+     */
+    function getExternalTriangle(rect) {
+        var cx = rect.center.x;
+        var cy = rect.center.y;
+        var r  = rect.diagonal / 2;
+        var _2r = 2 * r;
+        var _r3r = Math.sqrt(3) * r;
+
+        var A = new Point((cx - _r3r), (cy - r));
+        var B = new Point((cx + _r3r), (cy - r));
+        var C = new Point(cx, (cy + _2r));
+
+        return new Triangle([A, B, C]);
     }
 
     /**
@@ -55,6 +73,20 @@
         init: function (x, y) {
             this.x = x;
             this.y = y;
+        }
+    });
+
+    /**
+     * Size class
+     * @param {number} width
+     * @param {number} height
+     */
+    var Size = Class.extend({
+        width : 0,
+        height: 0,
+        init: function (width, height) {
+            this.width  = width;
+            this.height = height;
         }
     });
 
@@ -83,6 +115,34 @@
         }
     });
 
+    /**
+     * Rectangle class
+     * @param {Point} position Rectangle position at top left corner.
+     * @param {Size} size Rectangle size.
+     */
+    var Rectangle = Class.extend({
+        position: null,
+        size    : null,
+        center  : null,
+        diagonal: 0,
+        init: function (position, size) {
+            this.position = position;
+            this.size   = size;
+            var x = position.x + (size.width  / 2);
+            var y = position.y + (size.height / 2);
+            this.center = new Point(x, y);
+
+            var dx = size.width;
+            var dy = size.height;
+            this.diagonal = Math.sqrt((dx * dx) + (dy * dy));
+        }
+    });
+
+    /**
+     * Circle class
+     * @param {Point} center A center coordinate.
+     * @param {number} radius
+     */
     var Circle = Class.extend({
         radius: 0,
         center: null,
@@ -117,12 +177,27 @@
      * @param {Triangle} triangle
      */
     function drawTriangle(ctx, triangle) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.beginPath();
             ctx.moveTo(triangle.points[0].x, triangle.points[0].y);
             ctx.lineTo(triangle.points[1].x, triangle.points[1].y);
             ctx.lineTo(triangle.points[2].x, triangle.points[2].y);
         ctx.closePath();
         ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    /**
+     * Draw a triangle to a canvas.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Triangle} triangle
+     */
+    function drawRectangle(ctx, rectangle) {
+        ctx.beginPath();
+            ctx.rect(rectangle.position.x, rectangle.position.y, rectangle.size.width, rectangle.size.height);
+        ctx.closePath();
         ctx.stroke();
     }
 
@@ -138,9 +213,10 @@
         ctx.stroke();
     }
 
-    utils.drawPoint    = drawPoint;
-    utils.drawTriangle = drawTriangle;
-    utils.drawCircle   = drawCircle;
+    utils.drawPoint     = drawPoint;
+    utils.drawTriangle  = drawTriangle;
+    utils.drawCircle    = drawCircle;
+    utils.drawRectangle = drawRectangle;
 
     /*! -----------------------------------------------
         EXPORTS
@@ -149,9 +225,13 @@
 
     DelaunayTriangle.utils = utils;
     DelaunayTriangle.getCircumscribedCircle = getCircumscribedCircle;
-    DelaunayTriangle.Point    = Point;
-    DelaunayTriangle.Edge     = Edge;
-    DelaunayTriangle.Triangle = Triangle;
-    DelaunayTriangle.Circle   = Circle;
+    DelaunayTriangle.getExternalTriangle    = getExternalTriangle;
+
+    DelaunayTriangle.Point     = Point;
+    DelaunayTriangle.Size      = Size;
+    DelaunayTriangle.Edge      = Edge;
+    DelaunayTriangle.Triangle  = Triangle;
+    DelaunayTriangle.Rectangle = Rectangle;
+    DelaunayTriangle.Circle    = Circle;
 
 }(window, document, Class));

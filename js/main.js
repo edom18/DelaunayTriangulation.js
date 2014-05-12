@@ -10,23 +10,30 @@
     cv.width  = w;
     cv.height = h;
 
-    var x1 = 120;
-    var y1 = 80;
-    var x2 = 220;
-    var y2 = 120;
-    var x3 = 125;
-    var y3 = 150;
+    function createRandomPoints(num) {
+        var points = [];
+        var x, y;
+        for (var i = 0; i < num; i++) {
+            x = Math.random() * w;
+            y = Math.random() * h;
+            points.push(new DT.Point(x, y));
+        }
+        return points;
+    }
 
-    var vertecies = [
-        new DT.Point(x1, y1),
-        new DT.Point(x2, y2),
-        new DT.Point(x3, y3)
-    ];
+    // 三角分割したい点をランダムに生成
+    var points = createRandomPoints(10);
 
-    var triangle = new DT.Triangle(vertecies);
-    DT.utils.drawTriangle(ctx, triangle);
+    var rect = new DT.Rectangle(new DT.Point(80, 100), new DT.Size(150, 50));
+    DT.utils.drawRectangle(ctx, rect);
 
-    var circle = DT.getCircumscribedCircle(triangle);
+    var r = rect.diagonal / 2;
+    var circle = new DT.Circle(rect.center, r);
     DT.utils.drawCircle(ctx, circle);
+
+    DT.utils.drawPoint(ctx, rect.center);
+
+    var super_triangle = DT.getExternalTriangle(rect);
+    DT.utils.drawTriangle(ctx, super_triangle);
 
 }(window, document, Class, DT));
