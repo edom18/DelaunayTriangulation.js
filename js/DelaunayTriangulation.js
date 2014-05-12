@@ -92,12 +92,61 @@
         }
     });
 
+    //////////////////////////////////////////////////////////////
+
+    var utils = {};
+
+    /**
+     * Draw a point to a canvas.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Point} point
+     */
+    function drawPoint(ctx, point) {
+        ctx.save();
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+            ctx.arc(point.x, point.y, 3, 0, Math.PI * 2, false);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    /**
+     * Draw a triangle to a canvas.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Triangle} triangle
+     */
+    function drawTriangle(ctx, triangle) {
+        ctx.beginPath();
+            ctx.moveTo(triangle.points[0].x, triangle.points[0].y);
+            ctx.lineTo(triangle.points[1].x, triangle.points[1].y);
+            ctx.lineTo(triangle.points[2].x, triangle.points[2].y);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    /**
+     * Draw a circle to a canvas.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Circle} Circle
+     */
+    function drawCircle(ctx, circle) {
+        ctx.beginPath();
+            ctx.arc(circle.center.x, circle.center.y, circle.radius, 0, Math.PI * 2, false);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    utils.drawPoint    = drawPoint;
+    utils.drawTriangle = drawTriangle;
+    utils.drawCircle   = drawCircle;
 
     /*! -----------------------------------------------
         EXPORTS
     --------------------------------------------------- */
     win.DelaunayTriangle = win.DT = DelaunayTriangle;
 
+    DelaunayTriangle.utils = utils;
     DelaunayTriangle.getCircumscribedCircle = getCircumscribedCircle;
     DelaunayTriangle.Point    = Point;
     DelaunayTriangle.Edge     = Edge;

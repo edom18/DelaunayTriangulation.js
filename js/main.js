@@ -24,19 +24,9 @@
     ];
 
     var triangle = new DT.Triangle(vertecies);
-
-    ctx.beginPath();
-        ctx.moveTo(triangle.points[0].x, triangle.points[0].y);
-        ctx.lineTo(triangle.points[1].x, triangle.points[1].y);
-        ctx.lineTo(triangle.points[2].x, triangle.points[2].y);
-    ctx.closePath();
-    ctx.stroke();
+    DT.utils.drawTriangle(ctx, triangle);
 
     var circle = DT.getCircumscribedCircle(triangle);
-
-    ctx.beginPath();
-        ctx.arc(circle.center.x, circle.center.y, circle.radius, 0, Math.PI * 2, false);
-    ctx.closePath();
-    ctx.stroke();
+    DT.utils.drawCircle(ctx, circle);
 
 }(window, document, Class, DT));
