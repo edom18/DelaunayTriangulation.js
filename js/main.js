@@ -24,7 +24,7 @@ var ctx;
     }
 
     // 三角分割したい点をランダムに生成
-    var points = createRandomPoints(5);
+    var points = createRandomPoints(10);
 
     // for DEBUG.
     for (var i = 0, l = points.length; i < l; i++) {
