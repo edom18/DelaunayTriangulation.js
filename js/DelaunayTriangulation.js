@@ -6,9 +6,9 @@
     var DelaunayTriangle = {};
     var DT = DelaunayTriangle;
 
-    /*!
-     * Utility functions for Delaunay.
-     */
+    /*! -----------------------------------------------------
+        Utility functions for Delaunay.
+    --------------------------------------------------------- */
 
     /**
      * Get a circumscribed circle from a triangle.
@@ -63,10 +63,145 @@
     }
 
     /**
-     *
+     * Caluculate a delaunay triangle.
+     * @params {Array.<Point>} points
      */
-    function calc(points) {
-        // body...
+    function calculate(points) {
+        var w = win.innerWidth;
+        var h = win.innerHeight;
+
+        // 見つかった三角形を保持する配列
+        var triangles = [];
+
+        // 一番外側の巨大三角形を生成
+        // ここでは画面内の点限定として画面サイズを含む三角形を作る
+        var super_triangle = getExternalTriangle(new Rectangle(new Point(0, 0), new Size(w, h)));
+
+        // 生成した巨大三角形をドロネー三角形郡に追加
+        triangles.push(super_triangle);
+
+        while(points.length !== 0) {
+            // ひとつ目の点を取り出す
+            var point = points.pop();
+
+            // 点を内包する三角形を見つける
+            var triangle;
+            for (var i = 0, t; t = triangles[i]; i++) {
+                if (t.hitTest(point)) {
+                    triangle = t;
+                    break;
+                }
+            }
+
+            // 見つかった三角形の辺をスタックに積む
+            var edge_stack = [].concat(triangle.edges);
+
+            // 見つかった三角形を配列から削除
+            var index = triangles.indexOf(triangle);
+            triangles.splice(index, 1);
+
+            // 見つかった三角形を該当の点で分割
+            var A = triangle.points[0];
+            var B = triangle.points[1];
+            var C = triangle.points[2];
+
+            var new_triangle1 = new Triangle([A, B, point]);
+            var new_triangle2 = new Triangle([B, C, point]);
+            var new_triangle3 = new Triangle([C, A, point]);
+
+            triangles.push(new_triangle1);
+            triangles.push(new_triangle2);
+            triangles.push(new_triangle3);
+
+            // for DEBUG.
+            // debugger;
+            // drawPoint(ctx, point);
+            // drawTriangles(ctx, triangles);
+
+            // スタックが空になるまで繰り返す
+            while (edge_stack.length !== 0) {
+                var edge = edge_stack.pop();
+
+                // 辺を共有する三角形を見つける
+                var common_edge_triangles = [];
+
+                for (var i = 0, t; t = triangles[i]; i++) {
+                    if (t.hasEdge(edge)) {
+                        common_edge_triangles.push(t);
+                    }
+                }
+
+                // 共有辺（これを辺ABとする）を含む2個の三角形をABC, ABDとする
+                // もし、三角形ABCの外接円に点Dが入る場合は、共有辺をflipし、辺AD/DB/BC/CAをスタックにpushする
+                // つまり、見つかった三角形をリストから削除し、新しい辺リストをスタックに積む
+                // さらに、新しくできた三角形をリストに加える
+                var triangle_ABC = common_edge_triangles[0];
+                var triangle_ABD = common_edge_triangles[1];
+
+                // 共有する辺を持つ三角形がふたつ見つからなければスキップ
+                if (!triangle_ABD) {
+                    continue;
+                }
+
+                // あとで使うため、頂点A,Bを保持しておく
+                var point_A = edge.start;
+                var point_B = edge.end;
+
+                // 三角形ABCの頂点のうち、共有辺以外の点を取得（つまり点C）
+                var point_C = triangle_ABC.noCommonPointByEdge(edge);
+
+                // 三角形ABDの頂点のうち、共有辺以外の点を取得（つまり点D）
+                var point_D = triangle_ABD.noCommonPointByEdge(edge);
+
+                // 三角形ABCの外接円を取得
+                var external_circle = getCircumscribedCircle(triangle_ABC); 
+                // for DEBUG.
+                // debugger;
+                // ctx.clearRect(0, 0, win.innerWidth, win.innerHeight);
+                // utils.drawTriangle(ctx, triangle_ABC);
+                // utils.drawTriangle(ctx, triangle_ABD);
+                // utils.drawCircle(ctx, external_circle);
+
+                // 頂点Dが三角形ABCの外接円に含まれてるか判定
+                if (external_circle.hitTest(point_D)) {
+                    // debugger;
+
+                    // 三角形リストから三角形を削除
+                    var index1 = triangles.indexOf(common_edge_triangles[0]);
+                    triangles.splice(index1, 1);
+                    var index2 = triangles.indexOf(common_edge_triangles[1]);
+                    triangles.splice(index2, 1);
+
+                    // 共有辺をflipしてできる三角形を新しく三角形郡に追加
+                    var triangle_ACD = new Triangle([
+                        point_A,
+                        point_C,
+                        point_D
+                    ]);
+                    var triangle_BCD = new Triangle([
+                        point_B,
+                        point_C,
+                        point_D
+                    ]);
+
+                    triangles.push(triangle_ACD);
+                    triangles.push(triangle_BCD);
+
+                    // for DEBUG.
+                    // ctx.clearRect(0, 0, w, h);
+                    // drawTriangles(ctx, triangles);
+
+                    // 上記三角形の辺をedge stackに追加
+                    var other_edge1 = triangle_ABC.otherEdgeByEdge(edge);
+                    var other_edge2 = triangle_ABD.otherEdgeByEdge(edge);
+
+                    edge_stack = edge_stack.concat(other_edge1);
+                    edge_stack = edge_stack.concat(other_edge2);
+                }
+            }
+        }
+
+        return triangles;
     }
 
     var Vector2 = Class.extend({
@@ -177,6 +312,15 @@
             var v2 = new Vector2(this.end);
             return v2.sub(v1);
         },
+
+        /**
+         * 与えられた点を含んでいるか
+         * @param {Point} point 調査対象の点
+         * @return {boolean} 辺が与えれた点を含んでいたらtrue
+         */
+        hasPoint: function (point) {
+            return (this.start.isEqual(point) || this.end.isEqual(point));
+        },
         isEqual: function (edge) {
             return (
                 (this.start.isEqual(edge.start) && this.end.isEqual(edge.end)) ||
@@ -199,6 +343,51 @@
                 new Edge(points[1], points[2]),
                 new Edge(points[2], points[0])
             ];
+        },
+
+        /**
+         * 与えられた辺を含まない点を返す
+         * @param {Edge} edge 調査対象の辺
+         * @return {Point} 与えられた辺に含まれない点
+         */
+        noCommonPointByEdge: function (edge) {
+            for (var i = 0, l = this.points.length; i < l; i++) {
+                if (!edge.hasPoint(this.points[i])) {
+                    return this.points[i];
+                }
+            }
+
+            return null;
+        },
+
+        /**
+         * 与えられた辺以外の辺を返す
+         * @param {Edge} edge 調査対象の辺
+         * @return {Array.<Edge>} 該当の辺以外の辺の配列
+         */
+        otherEdgeByEdge: function (edge) {
+            var result = [];
+            for (var i = 0, e; e = this.edges[i]; i++) {
+                if (!e.isEqual(edge)) {
+                    result.push(e);
+                }
+            }
+            return result;
+        },
+
+        /**
+         * 与えられた辺を含んでいるかチェック
+         * @param {Edge} edge 調査対象の辺
+         * @return {boolean} 与えられた辺を含んでいたらtrue
+         */
+        hasEdge: function (edge) {
+            for (var i = 0, e; e = this.edges[i]; i++) {
+                if (this.edges[i].isEqual(edge)) {
+                    return true;
+                }
+            }
+
+            return false;
         },
 
         /**
@@ -263,6 +452,19 @@
         init: function (center, radius) {
             this.center = center;
             this.radius = radius;
+        },
+
+        /**
+         * 円内に引数の点が含まれているか確認
+         * @param {Point} point
+         * @return {boolean} 円内に点が含まれている場合にtrue
+         */
+        hitTest: function (point) {
+            var x = point.x - this.center.x;
+            var y = point.y - this.center.y;
+            var len = Math.sqrt((x * x) + (y * y));
+            
+            return len < this.radius;
         }
     });
 
@@ -304,6 +506,17 @@
     }
 
     /**
+     * Draw triangles to a canvas.
+     * @param {Canvasrenderingcontext2d} ctx
+     * @param {Array.<Triangle>} triangles
+     */
+    function drawTriangles(ctx, triangles) {
+        for (var i = 0, t; t = triangles[i]; i++) {
+            drawTriangle(ctx, t);
+        }
+    }
+
+    /**
      * Draw a triangle to a canvas.
      * @param {CanvasRenderingContext2D} ctx
      * @param {Triangle} triangle
@@ -329,6 +542,7 @@
 
     utils.drawPoint     = drawPoint;
     utils.drawTriangle  = drawTriangle;
+    utils.drawTriangles = drawTriangles;
     utils.drawCircle    = drawCircle;
     utils.drawRectangle = drawRectangle;
 
@@ -338,6 +552,7 @@
     win.DelaunayTriangle = win.DT = DelaunayTriangle;
 
     DelaunayTriangle.utils = utils;
+    DelaunayTriangle.calculate              = calculate;
     DelaunayTriangle.getCircumscribedCircle = getCircumscribedCircle;
     DelaunayTriangle.getExternalTriangle    = getExternalTriangle;
 

@@ -1,12 +1,14 @@
+var ctx;
+
 (function (win, doc, Class, DT) {
 
     'use strict';
 
     var cv  = doc.getElementById('cv'),
-        ctx = cv.getContext('2d'),
         w   = win.innerWidth,
         h   = win.innerHeight;
 
+    ctx = cv.getContext('2d');
     cv.width  = w;
     cv.height = h;
 
@@ -22,23 +24,15 @@
     }
 
     // 三角分割したい点をランダムに生成
-    var points = createRandomPoints(10);
+    var points = createRandomPoints(5);
 
-    var rect = new DT.Rectangle(new DT.Point(80, 100), new DT.Size(150, 50));
-    DT.utils.drawRectangle(ctx, rect);
-
-    var r = rect.diagonal / 2;
-    var circle = new DT.Circle(rect.center, r);
-    DT.utils.drawCircle(ctx, circle);
-
-    DT.utils.drawPoint(ctx, rect.center);
-
-    var super_triangle = DT.getExternalTriangle(rect);
-    DT.utils.drawTriangle(ctx, super_triangle);
-
-    cv.addEventListener('click', function (e) {
-        var p = new DT.Point(e.pageX, e.pageY);
-        console.log(super_triangle.hitTest(p));
-    }, false);
+    // for DEBUG.
+    for (var i = 0, l = points.length; i < l; i++) {
+        DT.utils.drawPoint(ctx, points[i]);
+    }
+    var triangles = DT.calculate(points);
+    for (var i = 0, l = triangles.length; i < l; i++) {
+        DT.utils.drawTriangle(ctx, triangles[i]);
+    }
 
 }(window, document, Class, DT));
