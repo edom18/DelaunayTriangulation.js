@@ -67,8 +67,6 @@
      * @params {Array.<Point>} points
      */
     function calculate(points) {
-        var w = win.innerWidth;
-        var h = win.innerHeight;
 
         // 見つかった三角形を保持する配列
         var triangles = [];
@@ -81,13 +79,14 @@
         triangles.push(super_triangle);
 
         while(points.length !== 0) {
+
             // ひとつ目の点を取り出す
             var point = points.pop();
 
             // 点を内包する三角形を見つける
             var triangle;
             for (var i = 0, t; t = triangles[i]; i++) {
-                if (t.hitTest(point)) {
+                if (t.hasPointInExternalCircle(point)) {
                     triangle = t;
                     break;
                 }
@@ -100,7 +99,8 @@
             var index = triangles.indexOf(triangle);
             triangles.splice(index, 1);
 
-            // 見つかった三角形を該当の点で分割
+            // 見つかった三角形を該当の点で分割し、
+            // 新しく3つの三角形にする
             var A = triangle.points[0];
             var B = triangle.points[1];
             var C = triangle.points[2];
@@ -190,6 +190,8 @@
                     // for DEBUG.
                     // ctx.clearRect(0, 0, w, h);
                     // drawTriangles(ctx, triangles);
+                    // drawTriangle(ctx, triangle_ACD);
+                    // drawTriangle(ctx, triangle_BCD);
 
                     // 上記三角形の辺をedge stackに追加
                     var other_edge1 = triangle_ABC.otherEdgeByEdge(edge);
@@ -204,8 +206,8 @@
         // 最後に、巨大三角形と頂点を共有している三角形をリストから削除
         var final_triangles = [];
         for (var i = 0, sp; sp = super_triangle.points[i]; i++) {
-            for (var j = 0, t; t = triangles[j]; j++) {
-                if (t.hasPoint(sp)) {
+            for (var j = 0, l = triangles.length; j < l; j++) {
+                if (triangles[j] && triangles[j].hasPoint(sp)) {
                     triangles[j] = null;
                 }
             }
@@ -424,6 +426,16 @@
         },
 
         /**
+         * 与えられた点が外接円に含まれるか確認
+         * @param {Point} point 調査対象の点
+         * @return {boolean} 外接円に含まれていればtrue
+         */
+        hasPointInExternalCircle: function (point) {
+            var external_circle = getCircumscribedCircle(this);
+            return external_circle.hitTest(point);
+        },
+
+        /**
          * 引数の点が三角形の内側にあるか判定
          * @param {Point} point
          * @return {boolean} 内側にある場合にtrue
@@ -527,7 +539,8 @@
      */
     function drawTriangle(ctx, triangle) {
         ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillStyle = typeof(fillColor) !== 'undefined' ? fillColor : 'rgba(0, 0, 0, 0.8)';
+        ctx.strokeStyle = typeof(strokeColor) !== 'undefined' ? strokeColor : 'rgba(0, 0, 0, 1.0)';
         ctx.beginPath();
             ctx.moveTo(triangle.points[0].x, triangle.points[0].y);
             ctx.lineTo(triangle.points[1].x, triangle.points[1].y);
@@ -567,10 +580,13 @@
      * @param {Circle} Circle
      */
     function drawCircle(ctx, circle) {
+        ctx.save();
+        ctx.strokeStyle = typeof(strokeColor) !== 'undefined' ? strokeColor : 'rgba(0, 0, 0, 1.0)';
         ctx.beginPath();
             ctx.arc(circle.center.x, circle.center.y, circle.radius, 0, Math.PI * 2, false);
         ctx.closePath();
         ctx.stroke();
+        ctx.restore();
     }
 
     utils.drawPoint     = drawPoint;

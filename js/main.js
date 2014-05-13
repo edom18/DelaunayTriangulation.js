@@ -1,12 +1,14 @@
 var ctx;
+var w = 500;
+var h = 400;
+var fillColor = 'rgba(0, 0, 0, 0.1)';
+var strokeColor = 'rgba(0, 0, 0, 0.2)';
 
 (function (win, doc, Class, DT) {
 
     'use strict';
 
-    var cv  = doc.getElementById('cv'),
-        w   = win.innerWidth,
-        h   = win.innerHeight;
+    var cv  = doc.getElementById('cv');
 
     ctx = cv.getContext('2d');
     cv.width  = w;
@@ -24,15 +26,19 @@ var ctx;
     }
 
     // 三角分割したい点をランダムに生成
-    var points = createRandomPoints(10);
+    var points = createRandomPoints(50);
 
     // for DEBUG.
     for (var i = 0, l = points.length; i < l; i++) {
         DT.utils.drawPoint(ctx, points[i]);
     }
+
     var triangles = DT.calculate(points);
-    for (var i = 0, l = triangles.length; i < l; i++) {
-        DT.utils.drawTriangle(ctx, triangles[i]);
+    DT.utils.drawTriangles(ctx, triangles);
+
+    for (var i = 0, t; t = triangles[i]; i++) {
+        var circle = DT.getCircumscribedCircle(t);
+        DT.utils.drawCircle(ctx, circle);
     }
 
 }(window, document, Class, DT));
