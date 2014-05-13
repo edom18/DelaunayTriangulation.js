@@ -201,7 +201,25 @@
             }
         }
 
-        return triangles;
+        // 最後に、巨大三角形と頂点を共有している三角形をリストから削除
+        var final_triangles = [];
+        for (var i = 0, sp; sp = super_triangle.points[i]; i++) {
+            for (var j = 0, t; t = triangles[j]; j++) {
+                if (t.hasPoint(sp)) {
+                    triangles[j] = null;
+                }
+            }
+        }
+
+        for (var i = 0, l = triangles.length; i < l; i++) {
+            if (triangles[i]) {
+                final_triangles.push(triangles[i]);
+            }
+        }
+
+        triangles = null;
+
+        return final_triangles;
     }
 
     var Vector2 = Class.extend({
@@ -383,6 +401,21 @@
         hasEdge: function (edge) {
             for (var i = 0, e; e = this.edges[i]; i++) {
                 if (this.edges[i].isEqual(edge)) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+
+        /**
+         * 与えられた点の頂点があるか確認
+         * @param {Pointl} point 調査対象の点
+         * @return {boolean} 対象の点が頂点にあったらtrue
+         */
+        hasPoint: function (point) {
+            for (var i = 0, p; p = this.points[i]; i++) {
+                if (p.isEqual(point)) {
                     return true;
                 }
             }
