@@ -36,4 +36,9 @@
     var super_triangle = DT.getExternalTriangle(rect);
     DT.utils.drawTriangle(ctx, super_triangle);
 
+    cv.addEventListener('click', function (e) {
+        var p = new DT.Point(e.pageX, e.pageY);
+        console.log(super_triangle.hitTest(p));
+    }, false);
+
 }(window, document, Class, DT));

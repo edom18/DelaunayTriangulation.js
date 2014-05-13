@@ -63,6 +63,70 @@
     }
 
     /**
+     *
+     */
+    function calc(points) {
+        // body...
+    }
+
+    var Vector2 = Class.extend({
+        x: 0,
+        y: 0,
+        init: function (x, y) {
+            if (Point.prototype.isPrototypeOf(x)) {
+                this.x = x.x;
+                this.y = x.y;
+            }
+            else {
+                this.x = x;
+                this.y = y;
+            }
+        },
+        norm: function () {
+            return Math.sqrt((this.x * this.x) + (this.y * this.y));
+        },
+        normalize: function () {
+            var nrm = this.norm();
+
+            if (nrm !== 0) {
+                nrm  = 1 / nrm;
+                this.x *= nrm;
+                this.y *= nrm;
+            }
+            return this;
+        },
+        add: function (v) {
+            this.x += v.x;
+            this.y += v.y;
+            return this;
+        },
+        sub: function (v) {
+            this.x -= v.x;
+            this.y -= v.y;
+            return this;
+        },
+        multiply: function (v) {
+            this.x *= v.x;
+            this.y *= v.y;
+            return this;
+        },
+        multiplyScalar: function (s) {
+            this.x *= s;
+            this.y *= s;
+            return this;
+        },
+        cross: function (v) {
+            return (this.x * v.y) - (this.y * v.x);
+        },
+        dot: function (v) {
+            return (this.x * v.x) + (this.y * v.y);
+        },
+        clone: function () {
+            return new Vector2(this.x, this.y);
+        }
+    });
+
+    /**
      * Point class
      * @param {number} x
      * @param {number} y
@@ -73,6 +137,9 @@
         init: function (x, y) {
             this.x = x;
             this.y = y;
+        },
+        isEqual: function (point) {
+            return (this.x === point.x && this.y === point.y);
         }
     });
 
@@ -87,6 +154,9 @@
         init: function (width, height) {
             this.width  = width;
             this.height = height;
+        },
+        isEqual: function (size) {
+            return (this.width === size.width && this.height === size.height);
         }
     });
 
@@ -101,6 +171,17 @@
         init: function (start, end) {
             this.start = start;
             this.end   = end;
+        },
+        toVector2: function () {
+            var v1 = new Vector2(this.start);
+            var v2 = new Vector2(this.end);
+            return v2.sub(v1);
+        },
+        isEqual: function (edge) {
+            return (
+                (this.start.isEqual(edge.start) && this.end.isEqual(edge.end)) ||
+                (this.start.isEqual(edge.end)   && this.end.isEqual(edge.start))
+            );
         }
     });
 
@@ -110,8 +191,41 @@
      */
     var Triangle = Class.extend({
         points: null,
+        edges : null,
         init: function (points) {
             this.points = points;
+            this.edges = [
+                new Edge(points[0], points[1]),
+                new Edge(points[1], points[2]),
+                new Edge(points[2], points[0])
+            ];
+        },
+
+        /**
+         * 引数の点が三角形の内側にあるか判定
+         * @param {Point} point
+         * @return {boolean} 内側にある場合にtrue
+         */
+        hitTest: function (point) {
+            var v1 = this.edges[0].toVector2();
+            var v2 = this.edges[1].toVector2();
+            var v3 = this.edges[2].toVector2();
+
+            var p1 = this.points[0];
+            var p2 = this.points[1];
+            var p3 = this.points[2];
+
+            var pv = new Vector2(point);
+
+            var p1_pv = pv.clone().sub(new Vector2(p1));
+            var p2_pv = pv.clone().sub(new Vector2(p2));
+            var p3_pv = pv.clone().sub(new Vector2(p3));
+
+            var test1 = v1.cross(p1_pv) > 0;
+            var test2 = v2.cross(p2_pv) > 0;
+            var test3 = v3.cross(p3_pv) > 0;
+
+            return (test1 && test2 && test3);
         }
     });
 
@@ -234,4 +348,4 @@
     DelaunayTriangle.Rectangle = Rectangle;
     DelaunayTriangle.Circle    = Circle;
 
-}(window, document, Class));
+}(window, document  , Class));
