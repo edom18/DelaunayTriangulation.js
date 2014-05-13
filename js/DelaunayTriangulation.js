@@ -83,40 +83,43 @@
             // ひとつ目の点を取り出す
             var point = points.pop();
 
-            // 点を内包する三角形を見つける
-            var triangle;
+            // 外接円に点が含まれる三角形を見つける
+            var hit_triangles = [];
             for (var i = 0, t; t = triangles[i]; i++) {
                 if (t.hasPointInExternalCircle(point)) {
-                    triangle = t;
-                    break;
+                    hit_triangles.push(t);
                 }
             }
 
-            // 見つかった三角形の辺をスタックに積む
-            var edge_stack = [].concat(triangle.edges);
+            debugger;
+            var edge_stack = [];
+            for (var i = 0, ht; ht = hit_triangles[i]; i++) {
+                // 見つかった三角形の辺をスタックに積む
+                edge_stack = edge_stack.concat(ht.edges);
 
-            // 見つかった三角形を配列から削除
-            var index = triangles.indexOf(triangle);
-            triangles.splice(index, 1);
+                // 見つかった三角形を配列から削除
+                var index = triangles.indexOf(ht);
+                triangles.splice(index, 1);
 
-            // 見つかった三角形を該当の点で分割し、
-            // 新しく3つの三角形にする
-            var A = triangle.points[0];
-            var B = triangle.points[1];
-            var C = triangle.points[2];
+                // 見つかった三角形を該当の点で分割し、
+                // 新しく3つの三角形にする
+                var A = ht.points[0];
+                var B = ht.points[1];
+                var C = ht.points[2];
 
-            var new_triangle1 = new Triangle([A, B, point]);
-            var new_triangle2 = new Triangle([B, C, point]);
-            var new_triangle3 = new Triangle([C, A, point]);
+                var new_triangle1 = new Triangle([A, B, point]);
+                var new_triangle2 = new Triangle([B, C, point]);
+                var new_triangle3 = new Triangle([C, A, point]);
 
-            triangles.push(new_triangle1);
-            triangles.push(new_triangle2);
-            triangles.push(new_triangle3);
+                triangles.push(new_triangle1);
+                triangles.push(new_triangle2);
+                triangles.push(new_triangle3);
 
-            // for DEBUG.
-            // debugger;
-            // drawPoint(ctx, point);
-            // drawTriangles(ctx, triangles);
+                // for DEBUG.
+                // debugger;
+                // drawPoint(ctx, point);
+                // drawTriangles(ctx, triangles);
+            }
 
             // スタックが空になるまで繰り返す
             while (edge_stack.length !== 0) {
@@ -143,6 +146,15 @@
                     continue;
                 }
 
+                // 選ばれた三角形が同一のものの場合はそれを削除して次へ
+                if (triangle_ABC.isEqual(triangle_ABD)) {
+                    var index_ABC = triangles.indexOf(triangle_ABC);
+                    triangles.splice(index_ABC, 1);
+                    var index_ABD = triangles.indexOf(triangle_ABD);
+                    triangles.splice(index_ABD, 1);
+                    continue;
+                }
+
                 // あとで使うため、頂点A,Bを保持しておく
                 var point_A = edge.start;
                 var point_B = edge.end;
@@ -152,6 +164,10 @@
 
                 // 三角形ABDの頂点のうち、共有辺以外の点を取得（つまり点D）
                 var point_D = triangle_ABD.noCommonPointByEdge(edge);
+
+                if (!point_D) {
+                    continue;
+                }
 
                 // 三角形ABCの外接円を取得
                 var external_circle = getCircumscribedCircle(triangle_ABC); 
@@ -460,6 +476,21 @@
             var test3 = v3.cross(p3_pv) > 0;
 
             return (test1 && test2 && test3);
+        },
+
+        /**
+         * 同値判定
+         * @param {Triangle} triangle
+         * @return {boolean} 各頂点がすべて同じならtrue
+         */
+        isEqual: function (triangle) {
+            for (var i = 0, p; p = triangle.points[i]; i++) {
+                if (!this.hasPoint(p)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
     });
 
