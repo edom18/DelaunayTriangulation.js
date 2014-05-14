@@ -7,13 +7,13 @@
     var DT = DelaunayTriangle;
 
     /*! -----------------------------------------------------
-        Utility functions for Delaunay.
+      ドロネー三角形分割のためのユーティリティ関数
     --------------------------------------------------------- */
 
     /**
-     * Get a circumscribed circle from a triangle.
-     * @param {Triangle} triangle
-     * @return {Circle}
+     * 外接円を得る
+     * @param {Triangle} triangle 外接円を得たい三角形
+     * @return {Circle} 外接円
      */
     function getCircumscribedCircle(triangle) {
 
@@ -31,7 +31,7 @@
         var y2_2 = y2 * y2;
         var y3_2 = y3 * y3;
 
-        // Calc circle's center.
+        // 外接円の中心座標を計算
         var c = 2 * ((x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1));
         var x = ((y3 - y1) * (x2_2 - x1_2 + y2_2 - y1_2) + (y1 - y2) * (x3_2 - x1_2 + y3_2 - y1_2)) / c;
         var y = ((x1 - x3) * (x2_2 - x1_2 + y2_2 - y1_2) + (x2 - x1) * (x3_2 - x1_2 + y3_2 - y1_2)) / c;
@@ -44,7 +44,7 @@
 
 
     /**
-     * Get a external triangle.
+     * 与えられた四角形が内接する三角形を得る
      * @param {Rectangle} rect wrapped points rectangle.
      * @return {Triangle}
      */
@@ -63,8 +63,8 @@
     }
 
     /**
-     * Caluculate a delaunay triangle.
-     * @params {Array.<Point>} points
+     * ドロネー三角形分割を計算
+     * @params {Array.<Point>} points 計算対象の点群
      */
     function calculate(points) {
 
@@ -73,7 +73,10 @@
 
         // 一番外側の巨大三角形を生成
         // ここでは画面内の点限定として画面サイズを含む三角形を作る
-        var super_triangle = getExternalTriangle(new Rectangle(new Point(0, 0), new Size(w, h)));
+        var position       = new Point(0, 0);
+        var size           = new Size(w, h);
+        var base_rect      = new Rectangle(position, size);
+        var super_triangle = getExternalTriangle(base_rect);
 
         // 生成した巨大三角形をドロネー三角形郡に追加
         triangles.push(super_triangle);
@@ -91,7 +94,6 @@
                 }
             }
 
-            debugger;
             var edge_stack = [];
             for (var i = 0, ht; ht = hit_triangles[i]; i++) {
                 // 見つかった三角形の辺をスタックに積む
@@ -123,11 +125,12 @@
 
             // スタックが空になるまで繰り返す
             while (edge_stack.length !== 0) {
+
+                // スタックから辺を取り出す
                 var edge = edge_stack.pop();
 
                 // 辺を共有する三角形を見つける
                 var common_edge_triangles = [];
-
                 for (var i = 0, t; t = triangles[i]; i++) {
                     if (t.hasEdge(edge)) {
                         common_edge_triangles.push(t);
@@ -165,10 +168,6 @@
                 // 三角形ABDの頂点のうち、共有辺以外の点を取得（つまり点D）
                 var point_D = triangle_ABD.noCommonPointByEdge(edge);
 
-                if (!point_D) {
-                    continue;
-                }
-
                 // 三角形ABCの外接円を取得
                 var external_circle = getCircumscribedCircle(triangle_ABC); 
                 // for DEBUG.
@@ -180,7 +179,6 @@
 
                 // 頂点Dが三角形ABCの外接円に含まれてるか判定
                 if (external_circle.hitTest(point_D)) {
-                    // debugger;
 
                     // 三角形リストから三角形を削除
                     var index1 = triangles.indexOf(common_edge_triangles[0]);
@@ -228,79 +226,20 @@
                 }
             }
         }
-
         for (var i = 0, l = triangles.length; i < l; i++) {
             if (triangles[i]) {
                 final_triangles.push(triangles[i]);
             }
         }
-
         triangles = null;
 
         return final_triangles;
     }
 
-    var Vector2 = Class.extend({
-        x: 0,
-        y: 0,
-        init: function (x, y) {
-            if (Point.prototype.isPrototypeOf(x)) {
-                this.x = x.x;
-                this.y = x.y;
-            }
-            else {
-                this.x = x;
-                this.y = y;
-            }
-        },
-        norm: function () {
-            return Math.sqrt((this.x * this.x) + (this.y * this.y));
-        },
-        normalize: function () {
-            var nrm = this.norm();
-
-            if (nrm !== 0) {
-                nrm  = 1 / nrm;
-                this.x *= nrm;
-                this.y *= nrm;
-            }
-            return this;
-        },
-        add: function (v) {
-            this.x += v.x;
-            this.y += v.y;
-            return this;
-        },
-        sub: function (v) {
-            this.x -= v.x;
-            this.y -= v.y;
-            return this;
-        },
-        multiply: function (v) {
-            this.x *= v.x;
-            this.y *= v.y;
-            return this;
-        },
-        multiplyScalar: function (s) {
-            this.x *= s;
-            this.y *= s;
-            return this;
-        },
-        cross: function (v) {
-            return (this.x * v.y) - (this.y * v.x);
-        },
-        dot: function (v) {
-            return (this.x * v.x) + (this.y * v.y);
-        },
-        clone: function () {
-            return new Vector2(this.x, this.y);
-        }
-    });
-
     /**
      * Point class
-     * @param {number} x
-     * @param {number} y
+     * @param {number} x X座標
+     * @param {number} y Y座標
      */
     var Point = Class.extend({
         x: 0,
@@ -316,8 +255,8 @@
 
     /**
      * Size class
-     * @param {number} width
-     * @param {number} height
+     * @param {number} width 幅
+     * @param {number} height 高さ
      */
     var Size = Class.extend({
         width : 0,
@@ -333,8 +272,8 @@
 
     /**
      * Edge class
-     * @param {Point} start
-     * @param {Point} end
+     * @param {Point} start 辺の開始点
+     * @param {Point} end 辺の終端点
      */
     var Edge = Class.extend({
         start: null,
@@ -342,11 +281,6 @@
         init: function (start, end) {
             this.start = start;
             this.end   = end;
-        },
-        toVector2: function () {
-            var v1 = new Vector2(this.start);
-            var v2 = new Vector2(this.end);
-            return v2.sub(v1);
         },
 
         /**
@@ -367,7 +301,7 @@
 
     /**
      * Triangle class
-     * @param {<Array>.Point}
+     * @param {<Array>.Point} 三角形を構成するPointクラス配列
      */
     var Triangle = Class.extend({
         points: null,
@@ -451,36 +385,10 @@
             return external_circle.hitTest(point);
         },
 
-        /**
-         * 引数の点が三角形の内側にあるか判定
-         * @param {Point} point
-         * @return {boolean} 内側にある場合にtrue
-         */
-        hitTest: function (point) {
-            var v1 = this.edges[0].toVector2();
-            var v2 = this.edges[1].toVector2();
-            var v3 = this.edges[2].toVector2();
-
-            var p1 = this.points[0];
-            var p2 = this.points[1];
-            var p3 = this.points[2];
-
-            var pv = new Vector2(point);
-
-            var p1_pv = pv.clone().sub(new Vector2(p1));
-            var p2_pv = pv.clone().sub(new Vector2(p2));
-            var p3_pv = pv.clone().sub(new Vector2(p3));
-
-            var test1 = v1.cross(p1_pv) > 0;
-            var test2 = v2.cross(p2_pv) > 0;
-            var test3 = v3.cross(p3_pv) > 0;
-
-            return (test1 && test2 && test3);
-        },
 
         /**
          * 同値判定
-         * @param {Triangle} triangle
+         * @param {Triangle} triangle 判定対象の三角形
          * @return {boolean} 各頂点がすべて同じならtrue
          */
         isEqual: function (triangle) {
@@ -496,8 +404,8 @@
 
     /**
      * Rectangle class
-     * @param {Point} position Rectangle position at top left corner.
-     * @param {Size} size Rectangle size.
+     * @param {Point} position 四角形の左上の座標
+     * @param {Size} size 四角形のサイズ
      */
     var Rectangle = Class.extend({
         position: null,
@@ -519,8 +427,8 @@
 
     /**
      * Circle class
-     * @param {Point} center A center coordinate.
-     * @param {number} radius
+     * @param {Point} center 円の中心座標
+     * @param {number} radius 半径
      */
     var Circle = Class.extend({
         radius: 0,
@@ -544,12 +452,16 @@
         }
     });
 
-    //////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+
+    /*! ------------------------------------------------------------------
+        描画用ユーティリティ関数
+    ---------------------------------------------------------------------- */
 
     var utils = {};
 
     /**
-     * Draw a point to a canvas.
+     * Canvasに点を描画
      * @param {CanvasRenderingContext2D} ctx
      * @param {Point} point
      */
@@ -564,7 +476,7 @@
     }
 
     /**
-     * Draw a triangle to a canvas.
+     * Canvasに三角形を描画
      * @param {CanvasRenderingContext2D} ctx
      * @param {Triangle} triangle
      */
@@ -583,7 +495,7 @@
     }
 
     /**
-     * Draw triangles to a canvas.
+     * Canvasに三角形郡を描画
      * @param {Canvasrenderingcontext2d} ctx
      * @param {Array.<Triangle>} triangles
      */
@@ -594,7 +506,7 @@
     }
 
     /**
-     * Draw a triangle to a canvas.
+     * Canvasに四角形を描画
      * @param {CanvasRenderingContext2D} ctx
      * @param {Triangle} triangle
      */
@@ -606,7 +518,7 @@
     }
 
     /**
-     * Draw a circle to a canvas.
+     * Canvasに円を描画
      * @param {CanvasRenderingContext2D} ctx
      * @param {Circle} Circle
      */
