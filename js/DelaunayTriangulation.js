@@ -248,6 +248,12 @@
             this.x = x;
             this.y = y;
         },
+
+        /**
+         * 同値判定
+         * @param {Point} point 判定対象の点
+         * @return {boolean} 同じ点の場合true
+         */
         isEqual: function (point) {
             return (this.x === point.x && this.y === point.y);
         }
@@ -265,6 +271,12 @@
             this.width  = width;
             this.height = height;
         },
+
+        /** 
+         * 同値判定
+         * @param {Size} size 判定対象のSizeクラス
+         * @return {boolean} サイズが同じ場合にtrue
+         */
         isEqual: function (size) {
             return (this.width === size.width && this.height === size.height);
         }
@@ -291,6 +303,12 @@
         hasPoint: function (point) {
             return (this.start.isEqual(point) || this.end.isEqual(point));
         },
+
+        /**
+         * 同値判定
+         * @param {Edge} edge 判定対象の辺
+         * @return {boolean} 対になる点が始点・終点問わず同じ位置にある場合にtrue
+         */
         isEqual: function (edge) {
             return (
                 (this.start.isEqual(edge.start) && this.end.isEqual(edge.end)) ||
